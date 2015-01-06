@@ -14,10 +14,7 @@
     "body-parser": "~1.10.0",
     "compression": "~1.2.2",
     "method-override": "~2.3.0",
-    "glob": "~4.3.1",
-    "jade": "~1.8.1",
     "areacodes": "0.0.3",
-    "grunt-contrib-uglify": "^0.7.0",
     "phone-formatter": "0.0.2",
     "socket.io": "^1.2.1"
   },
