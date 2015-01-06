@@ -1,0 +1,67 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+span{
+	color: #3F5EA5;
+	text-align: right;
+	font-size: 28px;
+	margin-left: 78px;
+}
+#center{
+	width:70%;
+	margin: 10% auto;
+	height: 100%;
+}
+#phoneNumber{
+	width: 100%;
+	border: 0px;
+	background: #14347E;
+	height: 70px;
+	color: #ffffff;
+	font-size: xx-large;
+	text-align: center;
+}
+.btn {
+	margin-top: 10px;
+  	background: #3498db;
+  	background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+  	background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+  	background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+  	background-image: -o-linear-gradient(top, #3498db, #2980b9);
+  	background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  	font-family: sans-serif;
+  	color: #ffffff;
+  	font-size: 30px;
+  	padding: 10px 20px 10px 20px;
+  	text-decoration: none;
+  	text-align: center;
+  	cursor: pointer;
+}
+
+.btn:hover {
+  	background: #3cb0fd;
+  	background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  	background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  	background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  	background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  	background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  	text-decoration: none;
+}
+
+#container{
+	margin-top: 40px;
+	height: 450px;
+	overflow-y:scroll;
+}
+
+li{
+	font-size: 40px;
+	list-style: none;
+	padding: 8px;
+}
+a{
+	text-decoration: none;
+	color: #14347E;
+}
