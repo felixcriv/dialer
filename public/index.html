@@ -3,21 +3,49 @@
 	<html lang="en">
 		<head>
 			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 			<meta name="viewport" content="width=device-width">
 			<title></title>
-			<link rel="stylesheet" href="/css/style.css">
+			<!-- <link rel="stylesheet" href="/css/style.css"> -->
+			<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 		</head>
 		<body>
-			<div id="center">
+			<div id="container-fluid">
+
+				<div class="row">
+				  <div class="col-xs-6 col-md-4"></div>
+				  <div class="col-xs-6 col-md-4">
+				  	<div class="form-group">
+				  		<p></p>
+						<p>
+							<input id="phoneNumber" class=" form-control input-lg text-center" type="tel" />
+						</p>
+						<p>
+							<button type="button" id="send" class="btn btn-primary btn-lg btn-block">send</button>
+						</p>
+					</div>
+				
+					<table class="table table-striped" id="list">
+						<thead>
+							<tr>
+								<th>phone #</th>
+								<th>state</th>
+								<th>time</th>
+							</tr>
+						</thead>
+						<tbody id="listBody">
+
+						</tbody>
+  
+					</table>
+				  </div>
+				  <div class="col-xs-6 col-md-4"></div>
+				</div>
+				
+					
 			</div>
-			<input id="phoneNumber" type="tel">
-			<div id="send" class="btn">send</div>
-			<div id="container">
-				<ul id="list">
-				</ul>
-			</div>
-			<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-			<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
-			<script src="/js/script.js"></script>
-		</body>
-		</html>
+		<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
+		<script src="/js/script.js"></script>
+	</body>
+</html>
