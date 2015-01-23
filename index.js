@@ -27,7 +27,7 @@ io.on('connection', function(socket) {
 
             io.emit('dial', {
                 phone: msg,
-                state: "TollFree"
+                state: "Toll-Free"
             });
         } else {
             var areaCodes = new AreaCodes();
