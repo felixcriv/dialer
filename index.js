@@ -4,7 +4,6 @@ var http = require('http');
 var server = http.createServer(app);
 var socket = require('socket.io');
 var io = socket.listen(server);
-var phoneFormatter = require('phone-formatter');
 var AreaCodes = require('areacodes');
 
 
@@ -31,8 +30,6 @@ io.on('connection', function(socket) {
                 state: "TollFree"
             });
         } else {
-            var phone = phoneFormatter.format(msg, "(NNN) NNN-NNNN");
-            areaCodes = new AreaCodes();
             var areaCodes = new AreaCodes();
 
             areaCodes.get('+1' + msg, function(err, data) {
@@ -44,7 +41,7 @@ io.on('connection', function(socket) {
                     });
                 } else {
                     io.emit('dial', {
-                        phone: phone,
+                        phone: msg,
                         state: data.state
                     });
                 }

@@ -15,7 +15,6 @@
     "compression": "~1.2.2",
     "method-override": "~2.3.0",
     "areacodes": "0.0.3",
-    "phone-formatter": "0.0.2",
     "socket.io": "^1.2.1"
   },
   "engines": {

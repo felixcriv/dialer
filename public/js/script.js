@@ -10,12 +10,12 @@ var eventHandler = {
     buttonClick: function buttonClick(e) {
 
         if (e.type === 'click' && phoneNumber.value) {
-            socket.emit('dial', phoneNumber.value);
+            socket.emit('dial', formatLocal("US", phoneNumber.value));
             phoneNumber.value = '';
         }
 
         if (e.type === 'keypress' && e.target.value) {
-            socket.emit('dial', e.target.value);
+            socket.emit('dial', formatLocal("US", e.target.value));
             e.target.value = "";
         }
     },
