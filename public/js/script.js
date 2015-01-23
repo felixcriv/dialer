@@ -7,33 +7,52 @@ var listBody = document.getElementById('listBody');
 
 var eventHandler = {
 
-  buttonClick: function(evnt){
-    socket.emit('dial', phoneNumber.value);
-    phoneNumber.value = "";
-  }
-},
+    buttonClick: function buttonClick(e) {
 
-handler = eventHandler.buttonClick.bind(eventHandler);
+        if (e.type === 'click' && phoneNumber.value) {
+            socket.emit('dial', phoneNumber.value);
+            phoneNumber.value = '';
+        }
 
-send.addEventListener('click', handler, false);
+        if (e.type === 'keypress' && e.target.value) {
+            socket.emit('dial', e.target.value);
+            e.target.value = "";
+        }
+    },
 
-socket.on('dial', function(msg){
-  var tr = document.createElement('tr');
-  var td1=document.createElement('td');
-  var td2=document.createElement('td');
-  var td3=document.createElement('td');
+    enterKey: function enterKey(e) {
 
-  var span = document.createElement('span');
-  span.innerHTML = '<a href="tel:' + msg.phone + '">' + msg.phone + '</a>';
+        if (!e) e = window.event;
+        var keyCode = e.keyCode || e.which;
+
+        if (keyCode == '13') {
+            this.buttonClick(e);
+        }
+    },
+
+};
+
+phoneNumber.onkeypress = eventHandler.enterKey.bind(eventHandler);
+
+send.addEventListener('click', eventHandler.buttonClick, false);
+
+socket.on('dial', function(msg) {
+    var tr = document.createElement('tr');
+    var td1 = document.createElement('td');
+    var td2 = document.createElement('td');
+    var td3 = document.createElement('td');
+
+    var span = document.createElement('span');
+    span.innerHTML = '<a href="tel:' + msg.phone + '">' + msg.phone + '</a>';
 
 
-  td1.appendChild(span);
-  td2.appendChild(document.createTextNode( msg.state.toUpperCase() ));
-  td3.appendChild(document.createTextNode( moment().format("h:mm a")));
+    td1.appendChild(span);
+    td2.appendChild(document.createTextNode(msg.state.toUpperCase()));
+    td3.appendChild(document.createTextNode(moment().format("h:mm a")));
 
-  tr.appendChild(td1);
-  tr.appendChild(td2);
-  tr.appendChild(td3);
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    tr.appendChild(td3);
 
-  listBody.appendChild(tr);
+    listBody.appendChild(tr);
 });
