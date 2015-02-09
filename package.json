@@ -1,7 +1,7 @@
 {
-  "name": "dial",
+  "name": "dialer",
   "version": "0.1.0",
-  "description": "dial app using socket.io",
+  "description": "dialer web app using socket.io",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
