@@ -34,18 +34,12 @@ io.on('connection', function(socket) {
 
             areaCodes.get('+1' + msg, function(err, data) {
                 //console.error( 'city/state', data );
-                if (err) {
-                    io.emit('dial', {
-                        phone: "INVALID #",
-                        state: "--"
-                    });
-                } else {
+                if (!err) {
                     io.emit('dial', {
                         phone: msg,
                         state: data.state
                     });
-                }
-
+                } 
             });
         }
     });

@@ -11,15 +11,17 @@
 
         buttonClick: function buttonClick(e) {
 
-            if (e.type === 'click' && phoneNumber.value) {
-                socket.emit('dial', formatLocal("US", phoneNumber.value));
-                phoneNumber.value = '';
+            var target = (e.type === 'click') ? phoneNumber: e.target;
+
+            if(this.isValid(target.value)){
+
+                socket.emit('dial', formatLocal("US", target.value));
+                target.value = "";
+
+                return false;
             }
 
-            if (e.type === 'keypress' && e.target.value) {
-                socket.emit('dial', formatLocal("US", e.target.value));
-                e.target.value = "";
-            }
+            alert('Invalid phone number');
         },
 
         enterKey: function enterKey(e) {
@@ -31,11 +33,15 @@
                 this.buttonClick(e);
             }
         },
+
+        isValid : function isValid(phone){
+            return isValidNumber(phone, "US");
+        }
     };
 
     phoneNumber.onkeypress = eventHandler.enterKey.bind(eventHandler);
 
-    send.addEventListener('click', eventHandler.buttonClick, false);
+    send.addEventListener('click', eventHandler.buttonClick.bind(eventHandler), false);
 
     socket.on('dial', function(msg) {
         var tr = document.createElement('tr');
@@ -64,5 +70,9 @@
         }, 1000);
 
         listBody.appendChild(tr);
+    });
+
+    socket.on('invalid', function(message){
+        alert(message.message);
     });
 })();
