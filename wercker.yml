@@ -1,5 +1,9 @@
 box: wercker/nodejs
 # Build definition
+deploy:
+  steps:
+    - heroku-deploy:
+        key-name: dialer
 build:
   # The steps that will be executed on build
   steps:
