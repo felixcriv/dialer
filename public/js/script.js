@@ -2,8 +2,8 @@
 
     var socket = io();
 
-    var send = document.getElementById('send');
-    var phoneNumber = document.getElementById('phoneNumber');
+    var sendButton = document.getElementById('send');
+    var phoneNumberInput = document.getElementById('phoneNumber');
     var list = document.getElementById('list');
     var listBody = document.getElementById('listBody');
 
@@ -11,7 +11,7 @@
 
         buttonClick: function buttonClick(e) {
 
-            var target = (e.type === 'click') ? phoneNumber: e.target;
+            var target = (e.type === 'click') ? phoneNumberInput: e.target;
 
             if(this.isValid(target.value)){
 
@@ -39,9 +39,8 @@
         }
     };
 
-    phoneNumber.onkeypress = eventHandler.enterKey.bind(eventHandler);
-
-    send.addEventListener('click', eventHandler.buttonClick.bind(eventHandler), false);
+    phoneNumberInput.onkeypress = eventHandler.enterKey.bind(eventHandler);
+    sendButton.addEventListener('click' , eventHandler.buttonClick.bind(eventHandler), false);
 
     socket.on('dial', function(msg) {
         var tr = document.createElement('tr');
