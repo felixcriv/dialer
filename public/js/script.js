@@ -1,19 +1,19 @@
 (function() {
+    'use strict';
 
-    var socket = io();
-
-    var sendButton = document.getElementById('send');
-    var phoneNumberInput = document.getElementById('phoneNumber');
-    var list = document.getElementById('list');
-    var listBody = document.getElementById('listBody');
+    var socket = io(),
+        sendButton = document.getElementById('send'),
+        phoneNumberInput = document.getElementById('phoneNumber'),
+        list = document.getElementById('list'),
+        listBody = document.getElementById('listBody');
 
     var eventHandler = {
 
         buttonClick: function buttonClick(e) {
 
-            var target = (e.type === 'click') ? phoneNumberInput: e.target;
+            var target = (e.type === 'click') ? phoneNumberInput : e.target;
 
-            if(this.isValid(target.value)){
+            if (this.isValid(target.value)) {
 
                 socket.emit('dial', formatLocal("US", target.value));
                 target.value = "";
@@ -34,13 +34,13 @@
             }
         },
 
-        isValid : function isValid(phone){
+        isValid: function isValid(phone) {
             return isValidNumber(phone, "US");
         }
     };
 
     phoneNumberInput.onkeypress = eventHandler.enterKey.bind(eventHandler);
-    sendButton.addEventListener('click' , eventHandler.buttonClick.bind(eventHandler), false);
+    sendButton.addEventListener('click', eventHandler.buttonClick.bind(eventHandler), false);
 
     socket.on('dial', function(msg) {
         var tr = document.createElement('tr');
@@ -71,7 +71,4 @@
         listBody.appendChild(tr);
     });
 
-    socket.on('invalid', function(message){
-        alert(message.message);
-    });
 })();
