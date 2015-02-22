@@ -5,6 +5,7 @@ var source = require('vinyl-source-stream');
 var browserify = require('browserify');
 var streamify = require('gulp-streamify');
 var notify = require("gulp-notify");
+var runSeq = require('run-sequence');
 
 
 gulp.task('browserify', function() {
@@ -21,6 +22,10 @@ gulp.task('dev', ['browserify']);
 
 gulp.task('watch', function(){
 	gulp.watch(['src/*.js'], ['browserify']);
+});
+
+gulp.task('heroku:production', function(){
+  runSeq('dev')
 });
 
 gulp.task('default', ['watch', 'browserify']);
