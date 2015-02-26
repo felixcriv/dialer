@@ -46,7 +46,7 @@
     var loadStoredPhones = localstorage.getSavedPhones();
 
     if(loadStoredPhones){
-        console.log(1);
+        console.log(loadStoredPhones);
     }
 
     phoneNumberInput.onkeypress = eventHandler.enterKey.bind(eventHandler);
