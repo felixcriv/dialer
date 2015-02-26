@@ -3,6 +3,11 @@
 var localstorage = require('./localStorage');
 
 function createTableEntry(msg) {
+    createTR(msg);
+}
+
+
+function createTR(msg) {
 
     var tr = document.createElement('tr');
     var created = moment();
@@ -16,18 +21,25 @@ function createTableEntry(msg) {
     var span = document.createElement('span');
     span.innerHTML = '<a href="tel:' + msg.phone + '">' + msg.phone + '</a>';
     td1.appendChild(span);
-   
+
 
     td2.appendChild(document.createTextNode(msg.state.toUpperCase()));
     td3.appendChild(document.createTextNode(moment().format("h:mm a")));
     td4.appendChild(document.createTextNode('a few seconds ago'));
-    
+
     var span2 = document.createElement('span');
-    span2.innerHTML = '<span style="cursor:pointer;" class="glyphicon glyphicon-star-empty text-center"></span>';
+    span2.innerHTML = '<button type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-heart" aria-hidden = "true"></span></button>';
 
     ////////
-    span2.onclick = function(){
-        console.log('click')
+    span2.onclick = function() {
+        this.childNodes[0].style.color = this.childNodes[0].style.color ? '' : '#d61a7f';
+
+        if (this.childNodes[0].style.color) {
+
+            var phone = this.parentElement.parentElement.childNodes[0].childNodes[0].textContent;
+
+            localstorage.savePhone(phone, moment());
+        }
     };
     td5.appendChild(span2);
 
@@ -42,7 +54,6 @@ function createTableEntry(msg) {
     }, 1000);
 
     return listBody.appendChild(tr);
-
 }
 
 exports.createTableEntry = createTableEntry;

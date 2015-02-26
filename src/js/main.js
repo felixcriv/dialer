@@ -3,6 +3,7 @@
 
     var evnt = require('./eventHandlerDetector');
     var tbEntry = require('./createTableEntry');
+    var localstorage = require('./localStorage');
 
     var socket = io(),
         sendButton = document.getElementById('send'),
@@ -41,6 +42,12 @@
             return isValidNumber(phone, "US");
         }
     };
+
+    var loadStoredPhones = localstorage.getSavedPhones();
+
+    if(loadStoredPhones){
+        console.log(1);
+    }
 
     phoneNumberInput.onkeypress = eventHandler.enterKey.bind(eventHandler);
     sendButton.addEventListener('click', eventHandler.buttonClick.bind(eventHandler), false);
