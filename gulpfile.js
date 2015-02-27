@@ -11,7 +11,7 @@ var nodemon = require('gulp-nodemon');
 var reload = browserSync.reload;
 
 
-gulp.task('browserify', function() {
+gulp.task('browserify-production', function() {
     return browserify('./src/js/main.js')
         .bundle()
         .pipe(source('app.min.js'))
@@ -19,11 +19,19 @@ gulp.task('browserify', function() {
         .pipe(gulp.dest('public/js'))
 });
 
+gulp.task('browserify-dev', function() {
+    return browserify('./src/js/main.js')
+        .bundle()
+        .pipe(source('app.js'))
+        //.pipe(streamify(uglify()))
+        .pipe(gulp.dest('public/js'))
+});
 
-gulp.task('dev', ['browserify']);
+
+gulp.task('dev', ['browserify-production']);
 
 gulp.task('watch', function() {
-    gulp.watch(['src/js/*.js', 'index.js'], ['browserify'], reload);
+    gulp.watch(['src/js/*.js', 'index.js'], ['browserify-dev'], reload);
 });
 
 
@@ -52,4 +60,4 @@ gulp.task('heroku:production', function() {
     runSeq('dev')
 });
 
-gulp.task('default', ['browserify', 'browserSync-init', 'watch']);
+gulp.task('default', ['browserify-dev', 'browserSync-init', 'watch']);
