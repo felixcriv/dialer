@@ -60,4 +60,4 @@ gulp.task('heroku:production', function() {
     runSeq('dev')
 });
 
-gulp.task('default', ['browserify-production', 'browserSync-init', 'watch']);
+gulp.task('default', ['browserify-dev', 'browserSync-init', 'watch']);

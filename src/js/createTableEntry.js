@@ -1,7 +1,7 @@
 'use strict';
 
 var sound = require('./emitSound');
-var data = require('./dataSync');
+var _data = require('./dataSync');
 
 var reminder;
 
@@ -103,7 +103,7 @@ function createTR(data, key, n) {
 
         remove.onclick = function() {
             clearTimeout(reminder);
-            data.remove(key);
+            _data.remove(key);
         };
 
         setInterval(function() {

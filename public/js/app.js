@@ -1820,11 +1820,11 @@ module.exports.getType = getType;
 'use strict';
 
 var sound = require('./emitSound');
-var data = require('./dataSync');
+var _data = require('./dataSync');
 
 var reminder;
 
-function createTR(msg, key, n) {
+function createTR(data, key, n) {
 
     var tr = document.createElement('tr');
     var created = moment();
@@ -1839,11 +1839,12 @@ function createTR(msg, key, n) {
 
     if (n) {
         var phone = document.createElement('span');
-        phone.innerHTML = '<a href="tel:' + msg.phone + '">' + msg.phone + '</a>';
+        phone.innerHTML = '<a href="tel:' + data.phone + '">' + data.phone + '</a>';
 
 
         var fav = document.createElement('span');
-        fav.innerHTML = '<button type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-heart" aria-hidden = "true"></span></button>';
+        fav.innerHTML = '<button type="button" class="btn btn-default btn-sm">' +
+            '<span class = "glyphicon glyphicon-heart" aria-hidden = "true" style="color:'+ (data.fav ? '#d61a7f' : '') +'"></span></button>';
 
         var remind = document.createElement('span');
         remind.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-bullhorn" aria-hidden = "true"></span></button>';
@@ -1852,7 +1853,7 @@ function createTR(msg, key, n) {
         remove.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-remove" aria-hidden = "true"></span></button>';
 
         td1.appendChild(phone);
-        td2.appendChild(document.createTextNode(msg.state.toUpperCase()));
+        td2.appendChild(document.createTextNode(data.state.toUpperCase()));
         td3.appendChild(document.createTextNode(moment().format("h:mm a")));
         td4.appendChild(document.createTextNode('a few seconds ago'));
         td5.appendChild(fav);
@@ -1864,11 +1865,6 @@ function createTR(msg, key, n) {
         tr.appendChild(td3);
         tr.appendChild(td4);
         tr.appendChild(td5);
-
-
-        baseRef.once('value', function(snap) {
-            fav.childNodes[0].style.color = snap.val().fav ? '#d61a7f' : '';
-        });
 
         baseRef.once('child_removed', function(data) {
             listBody.deleteRow(tr.rowIndex - 1);
@@ -1884,20 +1880,18 @@ function createTR(msg, key, n) {
 
         fav.onclick = function() {
 
-            baseRef.once('value', function(snap) {
-                fav.childNodes[0].style.color = snap.val().fav ? '#d61a7f' : '';
-            });
-
+            var isFav = this.childNodes[0].childNodes[0].style.color;
+            this.childNodes[0].childNodes[0].style.color = isFav ? '' : '#d61a7f';
             baseRef.update({
-                fav: fav.childNodes[0].style.color ? false : true
+                fav: isFav ? false : true
             });
-
-            this.childNodes[0].style.color = this.childNodes[0].style.color ? '' : '#d61a7f';
         };
 
         remind.onclick = function() {
 
-            remind.childNodes[0].style.color = remind.childNodes[0].style.color ? '' : 'orange';
+            var isReminded = remind.childNodes[0].style.color;
+
+            remind.childNodes[0].style.color = isReminded ? '' : 'orange';
 
             tr.style.color = phone.style.color ? '' : 'orange';
 
@@ -1909,12 +1903,14 @@ function createTR(msg, key, n) {
                     if (minutes > 0) {
                         reminder = setTimeout(function() {
                             notify.createNotification("Make a call", {
-                                body: msg.phone,
+                                body: data.phone,
                                 icon: "alert.ico"
                             });
                             sound.playSound(function() {});
                             remind.childNodes[0].style.color = '';
                         }, minutes * 60000);
+                    }else{
+                        alert('Please type a non-zero value');
                     }
                 }
 
@@ -1926,7 +1922,7 @@ function createTR(msg, key, n) {
 
         remove.onclick = function() {
             clearTimeout(reminder);
-            data.remove(key);
+            _data.remove(key);
         };
 
         setInterval(function() {
