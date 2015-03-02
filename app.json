@@ -1,6 +1,6 @@
 {
   "name": "dialer",
-  "description": "A simple web-socket dialer app",
+  "description": "A simple firebase.io dialer app",
   "repository": "https://github.com/felixcriv/dialer",
-  "keywords": ["node", "express", "dialer", "web-socket", "socket.io"]
+  "keywords": ["node", "express", "dialer", "firebase"]
 }

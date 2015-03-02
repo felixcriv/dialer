@@ -5,47 +5,43 @@
 
     var evnt = require('./eventHandlerDetector');
     var tbEntry = require('./createTableEntry');
-
-    var AreaCodes = require('areacodes');
-
-
-    var tollfree = ['800', '888', '877', '866', '855', '844'];
-    var reg = new RegExp(/\+?(1)?\d{3}/);
+    var notification = require('./notificationPermission');
+    var phoneNumber = require('./phoneNumber');
 
     var sendButton = document.getElementById('send'),
         phoneNumberInput = document.getElementById('phoneNumber'),
         list = document.getElementById('list'),
         listBody = document.getElementById('listBody');
 
+
+    notification.checkNotificationPermission();
+
     var eventHandler = {
 
         buttonClick: function buttonClick(e) {
 
             var target = evnt.eventHandlerDetector(phoneNumberInput, e);
+            var phone = target.value;
+            var phoneWithAreaCode = phoneNumber.numberWithAreaCode(phone);
+            var areaCodes = phoneNumber.areaCode();
 
-            if (this.isValid(target.value)) {
+            if (phoneNumber.isValid(phone)) {                
 
-                var ph = formatLocal("US", target.value);
+                var isTollFreeNumber = phoneNumber.isTollFreeNumber(phone);
 
-                var areaCode = reg.exec(formatLocal("US", target.value));
-
-                if (tollfree.indexOf(areaCode[0]) > -1) {
-                    tbEntry.savePhone(ph, 'Toll-Free', moment().toString());
+                if ( isTollFreeNumber> -1) {
+                    tbEntry.savePhone(phoneWithAreaCode, 'Toll-Free', 1);
                 } else {
-                    var areaCodes = new AreaCodes();
-
-                    areaCodes.get('+1' + ph, function(err, data) {
-
+                    areaCodes.get('+1' + phoneWithAreaCode, function(err, data) {
                         if (!err) {
-                            tbEntry.savePhone(ph, data.state, moment().toString())
+                            tbEntry.savePhone(phoneWithAreaCode, data.state, 1)
                         }
                     });
                 }
-                target.value = "";
 
+                target.value = "";
                 return false;
             }
-
             alert('Invalid phone number');
         },
 
@@ -57,22 +53,14 @@
             if (keyCode == '13') {
                 this.buttonClick(e);
             }
-        },
-
-        isValid: function isValid(phone) {
-            return isValidNumber(phone, "US");
         }
     };
-
-    var loadStoredPhones = tbEntry.getSavedPhones(function(d,key) {
-        tbEntry.createTR(d,key);
-    });
 
     phoneNumberInput.onkeypress = eventHandler.enterKey.bind(eventHandler);
     sendButton.addEventListener('click', eventHandler.buttonClick.bind(eventHandler), false);
 
 })();
-},{"./createTableEntry":5,"./eventHandlerDetector":6,"areacodes":2}],2:[function(require,module,exports){
+},{"./createTableEntry":5,"./eventHandlerDetector":6,"./notificationPermission":7,"./phoneNumber":8}],2:[function(require,module,exports){
 "use strict";
 
 var __ = require( 'doublescore' );
@@ -1831,19 +1819,31 @@ module.exports.getType = getType;
 },{}],5:[function(require,module,exports){
 'use strict';
 
-
 var dialr = new Firebase('https://dialr.firebaseio.com/');
 var dataRef = dialr.child("data");
 
-function createTableEntry(msg) {
-    createTR(msg);
+var reminder;
+
+function savePhone(phone, state, sync) {
+
+    var data = {
+        phone: phone,
+        state: state,
+        fav: false,
+        UISync: sync,
+        time: moment().toString()
+    };
+
+    dataRef.push(data);
 }
 
-function createTR(msg, key) {
+
+function createTR(msg, key, n) {
 
     var tr = document.createElement('tr');
     var created = moment();
 
+    var baseRef = new Firebase('https://dialr.firebaseio.com/data/' + key);
 
     var td1 = document.createElement('td');
     var td2 = document.createElement('td');
@@ -1851,97 +1851,159 @@ function createTR(msg, key) {
     var td4 = document.createElement('td');
     var td5 = document.createElement('td');
 
-    var span = document.createElement('span');
-    span.innerHTML = '<a href="tel:' + msg.phone + '">' + msg.phone + '</a>';
-    td1.appendChild(span);
+    if (n) {
+        var phone = document.createElement('span');
+        phone.innerHTML = '<a href="tel:' + msg.phone + '">' + msg.phone + '</a>';
 
 
-    td2.appendChild(document.createTextNode(msg.state.toUpperCase()));
-    td3.appendChild(document.createTextNode(moment().format("h:mm a")));
-    td4.appendChild(document.createTextNode('a few seconds ago'));
+        var fav = document.createElement('span');
+        fav.innerHTML = '<button type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-heart" aria-hidden = "true"></span></button>';
 
-    var fav = document.createElement('span');
-    fav.innerHTML = '<button type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-heart" aria-hidden = "true"></span></button>';
+        var remind = document.createElement('span');
+        remind.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-bullhorn" aria-hidden = "true"></span></button>';
 
+        var remove = document.createElement('span');
+        remove.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-remove" aria-hidden = "true"></span></button>';
 
-    var remove = document.createElement('span');
-    remove.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-trash" aria-hidden = "true"></span></button>';
+        td1.appendChild(phone);
+        td2.appendChild(document.createTextNode(msg.state.toUpperCase()));
+        td3.appendChild(document.createTextNode(moment().format("h:mm a")));
+        td4.appendChild(document.createTextNode('a few seconds ago'));
+        td5.appendChild(fav);
+        td5.appendChild(remind);
+        td5.appendChild(remove);
 
-    fav.onclick = function() {
-        this.childNodes[0].style.color = this.childNodes[0].style.color ? '' : '#d61a7f';
-        var phone = this.parentElement.parentElement.childNodes[0].childNodes[0].textContent;
-        var state = this.parentElement.parentElement.childNodes[1].textContent;
-
-
-        if (this.childNodes[0].style.color) {
-            localstorage.savePhone(phone, state, moment());
-        } else {
-            localstorage.removePhone(phone);
-        }
-    };
-
-    remove.onclick = function() {
-        dataRef.child(this.childNodes[0].attributes[0].value).remove();
-    };
-
-    dataRef.on('child_removed', function(old) {
-        console.log('removed');
-        var row = remove.parentNode.parentNode;
-        row.parentNode.removeChild(row);
-
-    });
-
-    td5.appendChild(fav);
-    td5.appendChild(remove);
-
-    tr.appendChild(td1);
-    tr.appendChild(td2);
-    tr.appendChild(td3);
-    tr.appendChild(td4);
-    tr.appendChild(td5);
-
-    setInterval(function() {
-        td4.innerHTML = moment().from(created, true) + " ago"
-    }, 1000);
-
-    return listBody.appendChild(tr);
-}
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
+        tr.appendChild(td5);
 
 
-function savePhone(phone, state, time) {
-
-    var ref = dataRef.push({
-        phone: phone,
-        state: state,
-        fav: false,
-        time: time.toString()
-    });
-
-    return ref.key();
-}
-
-function removePhone(phone) {
-
-
-}
-
-function getSavedPhones(cb) {
-
-    dataRef.once("value", function(snap) {
-
-        var keys = Object.keys(snap.val() || {});
-        var lastIdInSnapshot = keys[keys.length]
-
-        dataRef.startAt(null, lastIdInSnapshot).on("child_added", function(newMessSnapshot) {
-
-            cb(newMessSnapshot.val(), newMessSnapshot.key());
+        baseRef.once('value', function(snap) {
+            fav.childNodes[0].style.color = snap.val().fav ? '#d61a7f' : '';
         });
-    })
+
+        baseRef.once('child_removed', function(data) {
+            listBody.deleteRow(tr.rowIndex - 1);
+        });
+
+
+        phone.onclick = function() {
+            tr.style.color = 'black';
+            clearTimeout(reminder);
+            remind.childNodes[0].style.color = '';
+        };
+
+
+        fav.onclick = function() {
+
+            baseRef.once('value', function(snap) {
+                fav.childNodes[0].style.color = snap.val().fav ? '#d61a7f' : '';
+            });
+
+
+            baseRef.update({
+                fav: fav.childNodes[0].style.color ? false : true
+            });
+
+            this.childNodes[0].style.color = this.childNodes[0].style.color ? '' : '#d61a7f';
+            var phone = this.parentElement.parentElement.childNodes[0].childNodes[0].textContent;
+            var state = this.parentElement.parentElement.childNodes[1].textContent;
+
+        };
+
+        remind.onclick = function() {
+
+            remind.childNodes[0].style.color = remind.childNodes[0].style.color ? '' : 'orange';
+
+            tr.style.color = phone.style.color ? '' : 'orange';
+
+            if (remind.childNodes[0].style.color) {
+                if (notify.permissionLevel()) {
+
+                    var minutes;
+
+                    do {
+                        minutes = ~~prompt('Remind me in .. ? (minutes)', '10');
+                        console.log(minutes);
+                    } while (minutes <= 0);
+
+                    reminder = setTimeout(function() {
+                        notify.createNotification("Make a call", {
+                            body: msg.phone,
+                            icon: "alert.ico"
+                        });
+                        playSound();
+                    }, minutes * 60000);
+                }
+
+            } else {
+                tr.style.color = '';
+                clearTimeout(reminder);
+            }
+
+            function playSound() {
+
+                var sine1 = T("sin", {
+                    freq: 240,
+                    mul: 0.51
+                });
+                var sine2 = T("sin", {
+                    freq: 400,
+                    mul: 0.54
+                });
+
+                T("perc", {
+                    r: 675
+                }, sine1, sine2).on("ended", function() {
+                    this.pause();
+                }).bang().play();
+
+                remind.childNodes[0].style.color = '';
+            }
+
+        };
+
+        remove.onclick = function() {
+
+            clearTimeout(reminder);
+
+            var onComplete = function(error) {
+                if (error) {
+                    console.log('Synchronization failed');
+                } else {
+                    console.log('Synchronization succeeded');
+                }
+            };
+            baseRef.remove(onComplete());
+        }
+
+        setInterval(function() {
+            td4.innerHTML = moment().from(created, true) + " ago"
+        }, 1000);
+
+        //forgetting sync after 5 secs
+        setTimeout(function() {
+            baseRef.update({
+                UISync: 0
+            });
+            console.log({
+                UISync: 0
+            });
+        }, 5000);
+
+        return listBody.appendChild(tr);
+    }
 }
 
 
-exports.createTableEntry = createTableEntry;
-exports.getSavedPhones = getSavedPhones;
+dataRef.orderByValue().on('child_added', function(data) {
+    createTR(data.exportVal(), data.key(), data.exportVal().UISync || data.exportVal().fav)
+});
+
+dataRef.off("value");
+
 exports.savePhone = savePhone;
 exports.createTR = createTR;
 },{}],6:[function(require,module,exports){
@@ -1952,4 +2014,51 @@ function eventHandlerDetector(input, e){
 }
 
 exports.eventHandlerDetector = eventHandlerDetector;
-},{}]},{},[1]);
+},{}],7:[function(require,module,exports){
+//Checks notification permission on the browser.
+
+function checkNotificationPermission() {
+    notify.config({
+        pageVisibility: false,
+        autoClose: 0
+    });
+
+    if (notify.permissionLevel() == notify.PERMISSION_DEFAULT) {
+        notify.requestPermission(function(v) {
+            return 1;
+        })
+    } else if (notify.permissionLevel == notify.PERMISSION_GRANTED) {
+        return 1;
+    }
+    return 0;
+}
+
+exports.checkNotificationPermission = checkNotificationPermission;
+},{}],8:[function(require,module,exports){
+var AreaCodes = require('areacodes');
+//tollfree codes
+var tollfree = ['800', '888', '877', '866', '855', '844'];
+
+var reg = new RegExp(/\+?(1)?\d{3}/);
+
+function isTollFreeNumber(phone){
+	return tollfree.indexOf(reg.exec(formatLocal("US", phone))[0]);
+}
+
+function numberWithAreaCode (phone){
+	return formatLocal("US", phone);
+}
+
+function areaCode () {
+	return new AreaCodes();
+}
+
+function isValid(phone){
+	return isValidNumber(phone, "US");
+}
+
+exports.isTollFreeNumber = isTollFreeNumber;
+exports.numberWithAreaCode = numberWithAreaCode;
+exports.areaCode = areaCode;
+exports.isValid = isValid;
+},{"areacodes":2}]},{},[1]);

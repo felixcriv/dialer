@@ -1,2 +1,2 @@
 # dialer
-A simple web-socket dialer web app.
+A simple firebase.io reminder web app.

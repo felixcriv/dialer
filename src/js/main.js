@@ -4,47 +4,43 @@
 
     var evnt = require('./eventHandlerDetector');
     var tbEntry = require('./createTableEntry');
-
-    var AreaCodes = require('areacodes');
-
-
-    var tollfree = ['800', '888', '877', '866', '855', '844'];
-    var reg = new RegExp(/\+?(1)?\d{3}/);
+    var notification = require('./notificationPermission');
+    var phoneNumber = require('./phoneNumber');
 
     var sendButton = document.getElementById('send'),
         phoneNumberInput = document.getElementById('phoneNumber'),
         list = document.getElementById('list'),
         listBody = document.getElementById('listBody');
 
+
+    notification.checkNotificationPermission();
+
     var eventHandler = {
 
         buttonClick: function buttonClick(e) {
 
             var target = evnt.eventHandlerDetector(phoneNumberInput, e);
+            var phone = target.value;
+            var phoneWithAreaCode = phoneNumber.numberWithAreaCode(phone);
+            var areaCodes = phoneNumber.areaCode();
 
-            if (this.isValid(target.value)) {
+            if (phoneNumber.isValid(phone)) {                
 
-                var ph = formatLocal("US", target.value);
+                var isTollFreeNumber = phoneNumber.isTollFreeNumber(phone);
 
-                var areaCode = reg.exec(formatLocal("US", target.value));
-
-                if (tollfree.indexOf(areaCode[0]) > -1) {
-                    tbEntry.savePhone(ph, 'Toll-Free', moment().toString());
+                if ( isTollFreeNumber> -1) {
+                    tbEntry.savePhone(phoneWithAreaCode, 'Toll-Free', 1);
                 } else {
-                    var areaCodes = new AreaCodes();
-
-                    areaCodes.get('+1' + ph, function(err, data) {
-
+                    areaCodes.get('+1' + phoneWithAreaCode, function(err, data) {
                         if (!err) {
-                            tbEntry.savePhone(ph, data.state, moment().toString())
+                            tbEntry.savePhone(phoneWithAreaCode, data.state, 1)
                         }
                     });
                 }
-                target.value = "";
 
+                target.value = "";
                 return false;
             }
-
             alert('Invalid phone number');
         },
 
@@ -56,16 +52,8 @@
             if (keyCode == '13') {
                 this.buttonClick(e);
             }
-        },
-
-        isValid: function isValid(phone) {
-            return isValidNumber(phone, "US");
         }
     };
-
-    var loadStoredPhones = tbEntry.getSavedPhones(function(d,key) {
-        tbEntry.createTR(d,key);
-    });
 
     phoneNumberInput.onkeypress = eventHandler.enterKey.bind(eventHandler);
     sendButton.addEventListener('click', eventHandler.buttonClick.bind(eventHandler), false);
