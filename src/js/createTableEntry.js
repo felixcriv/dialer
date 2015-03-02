@@ -8,6 +8,7 @@ var reminder;
 function createTR(data, key, n) {
 
     var tr = document.createElement('tr');
+    tr.id = key;
     var created = moment();
 
     var baseRef = new Firebase('https://dialr.firebaseio.com/data/' + key);
@@ -28,10 +29,10 @@ function createTR(data, key, n) {
             '<span class = "glyphicon glyphicon-heart" aria-hidden = "true" style="color:'+ (data.fav ? '#d61a7f' : '') +'"></span></button>';
 
         var remind = document.createElement('span');
-        remind.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-bullhorn" aria-hidden = "true"></span></button>';
+        remind.innerHTML = '<button style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-bullhorn" aria-hidden = "true"></span></button>';
 
         var remove = document.createElement('span');
-        remove.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-remove" aria-hidden = "true"></span></button>';
+        remove.innerHTML = '<button style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-remove" aria-hidden = "true"></span></button>';
 
         td1.appendChild(phone);
         td2.appendChild(document.createTextNode(data.state.toUpperCase()));
@@ -60,12 +61,8 @@ function createTR(data, key, n) {
 
 
         fav.onclick = function() {
-
-            var isFav = this.childNodes[0].childNodes[0].style.color;
-            this.childNodes[0].childNodes[0].style.color = isFav ? '' : '#d61a7f';
-            baseRef.update({
-                fav: isFav ? false : true
-            });
+            var favIcon = this.childNodes[0].childNodes[0].style.color;
+            _data.update(favIcon, key, tr.rowIndex);
         };
 
         remind.onclick = function() {
