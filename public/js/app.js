@@ -3,10 +3,10 @@
 (function() {
     'use strict';
 
-    var evnt = require('./eventHandlerDetector');
-    var tbEntry = require('./createTableEntry');
-    var notification = require('./notificationPermission');
-    var phoneNumber = require('./phoneNumber');
+    var _evnt = require('./eventHandlerDetector');
+    var _notification = require('./notificationPermission');
+    var _phoneNumber = require('./phoneNumber');
+    var _data = require('./dataSync');
 
     var sendButton = document.getElementById('send'),
         phoneNumberInput = document.getElementById('phoneNumber'),
@@ -14,35 +14,35 @@
         listBody = document.getElementById('listBody');
 
 
-    notification.checkNotificationPermission();
+    _notification.checkNotificationPermission();
 
     var eventHandler = {
 
         buttonClick: function buttonClick(e) {
 
-            var target = evnt.eventHandlerDetector(phoneNumberInput, e);
+            var target = _evnt.eventHandlerDetector(phoneNumberInput, e);
             var phone = target.value;
-            var phoneWithAreaCode = phoneNumber.numberWithAreaCode(phone);
-            var areaCodes = phoneNumber.areaCode();
+            var phoneWithAreaCode = _phoneNumber.numberWithAreaCode(phone);
+            var areaCodes = _phoneNumber.areaCode();
 
-            if (phoneNumber.isValid(phone)) {                
+            if (_phoneNumber.isTollFreeNumber(phone) > -1) {
 
-                var isTollFreeNumber = phoneNumber.isTollFreeNumber(phone);
+                _data.save(phoneWithAreaCode, 'Toll-Free', 1);
 
-                if ( isTollFreeNumber> -1) {
-                    tbEntry.savePhone(phoneWithAreaCode, 'Toll-Free', 1);
-                } else {
-                    areaCodes.get('+1' + phoneWithAreaCode, function(err, data) {
-                        if (!err) {
-                            tbEntry.savePhone(phoneWithAreaCode, data.state, 1)
-                        }
-                    });
-                }
+            } else if (_phoneNumber.isValid(phone)) {
 
-                target.value = "";
-                return false;
+                areaCodes.get('+1' + phoneWithAreaCode, function(err, data) {
+                    if (!err) {
+                        _data.save(phoneWithAreaCode, data.state, 1)
+                    }
+                });
+
+            } else {
+                alert('Invalid phone number');
             }
-            alert('Invalid phone number');
+
+            target.value = "";
+            return false;
         },
 
         enterKey: function enterKey(e) {
@@ -60,7 +60,7 @@
     sendButton.addEventListener('click', eventHandler.buttonClick.bind(eventHandler), false);
 
 })();
-},{"./createTableEntry":5,"./eventHandlerDetector":6,"./notificationPermission":7,"./phoneNumber":8}],2:[function(require,module,exports){
+},{"./dataSync":6,"./eventHandlerDetector":8,"./notificationPermission":9,"./phoneNumber":10}],2:[function(require,module,exports){
 "use strict";
 
 var __ = require( 'doublescore' );
@@ -1819,24 +1819,10 @@ module.exports.getType = getType;
 },{}],5:[function(require,module,exports){
 'use strict';
 
-var dialr = new Firebase('https://dialr.firebaseio.com/');
-var dataRef = dialr.child("data");
+var sound = require('./emitSound');
+var data = require('./dataSync');
 
 var reminder;
-
-function savePhone(phone, state, sync) {
-
-    var data = {
-        phone: phone,
-        state: state,
-        fav: false,
-        UISync: sync,
-        time: moment().toString()
-    };
-
-    dataRef.push(data);
-}
-
 
 function createTR(msg, key, n) {
 
@@ -1902,15 +1888,11 @@ function createTR(msg, key, n) {
                 fav.childNodes[0].style.color = snap.val().fav ? '#d61a7f' : '';
             });
 
-
             baseRef.update({
                 fav: fav.childNodes[0].style.color ? false : true
             });
 
             this.childNodes[0].style.color = this.childNodes[0].style.color ? '' : '#d61a7f';
-            var phone = this.parentElement.parentElement.childNodes[0].childNodes[0].textContent;
-            var state = this.parentElement.parentElement.childNodes[1].textContent;
-
         };
 
         remind.onclick = function() {
@@ -1923,14 +1905,15 @@ function createTR(msg, key, n) {
                 if (notify.permissionLevel()) {
 
                     var minutes = ~~prompt('Remind me in .. ? (minutes)', '10');
-                   
-                    if (minutes>0) {
+
+                    if (minutes > 0) {
                         reminder = setTimeout(function() {
                             notify.createNotification("Make a call", {
                                 body: msg.phone,
                                 icon: "alert.ico"
                             });
-                            playSound();
+                            sound.playSound(function() {});
+                            remind.childNodes[0].style.color = '';
                         }, minutes * 60000);
                     }
                 }
@@ -1939,53 +1922,20 @@ function createTR(msg, key, n) {
                 tr.style.color = '';
                 clearTimeout(reminder);
             }
-
-            function playSound() {
-
-                var sine1 = T("sin", {
-                    freq: 240,
-                    mul: 0.51
-                });
-                var sine2 = T("sin", {
-                    freq: 400,
-                    mul: 0.54
-                });
-
-                T("perc", {
-                    r: 675
-                }, sine1, sine2).on("ended", function() {
-                    this.pause();
-                }).bang().play();
-
-                remind.childNodes[0].style.color = '';
-            }
-
         };
 
         remove.onclick = function() {
-
             clearTimeout(reminder);
-
-            var onComplete = function(error) {
-                if (error) {
-                    console.log('Synchronization failed');
-                } else {
-                    console.log('Synchronization succeeded');
-                }
-            };
-            baseRef.remove(onComplete());
-        }
+            data.remove(key);
+        };
 
         setInterval(function() {
             td4.innerHTML = moment().from(created, true) + " ago"
         }, 1000);
 
-        //forgetting sync after 5 secs
+        //void sync after 5 secs
         setTimeout(function() {
             baseRef.update({
-                UISync: 0
-            });
-            console.log({
                 UISync: 0
             });
         }, 5000);
@@ -1994,16 +1944,77 @@ function createTR(msg, key, n) {
     }
 }
 
+exports.createTR = createTR;
+},{"./dataSync":6,"./emitSound":7}],6:[function(require,module,exports){
+'use strict';
 
-dataRef.orderByValue().on('child_added', function(data) {
-    createTR(data.exportVal(), data.key(), data.exportVal().UISync || data.exportVal().fav)
-});
+
+var dialr = new Firebase('https://dialr.firebaseio.com/');
+var dataRef = dialr.child("data");
+var table = require('./createTableEntry');
+
+
+(function sync() {
+
+    dataRef.orderByValue().on('child_added', function(data) {
+        table.createTR(data.exportVal(), data.key(), data.exportVal().UISync || data.exportVal().fav)
+    });
+
+})();
+
+
+function save(phone, state, sync) {
+    var data = {
+        phone: phone,
+        state: state,
+        fav: false,
+        UISync: sync,
+        time: moment().toString()
+    };
+
+    dataRef.push(data);
+}
+
+function remove(key) {
+    var onComplete = function(error) {
+        if (error) {
+            console.log('Synchronization failed');
+        } else {
+            console.log('Synchronization succeeded');
+        }
+    };
+    dataRef.child(key).remove(onComplete);
+}
 
 dataRef.off("value");
 
-exports.savePhone = savePhone;
-exports.createTR = createTR;
-},{}],6:[function(require,module,exports){
+exports.save = save;
+exports.remove = remove;
+},{"./createTableEntry":5}],7:[function(require,module,exports){
+'use strict';
+
+function playSound(cb) {
+
+    var sine1 = T("sin", {
+        freq: 240,
+        mul: 0.51
+    });
+    var sine2 = T("sin", {
+        freq: 400,
+        mul: 0.54
+    });
+
+    T("perc", {
+        r: 675
+    }, sine1, sine2).on("ended", function() {
+        this.pause();
+    }).bang().play();
+
+    cb();
+}
+
+exports.playSound = playSound;
+},{}],8:[function(require,module,exports){
 'use strict';
 
 function eventHandlerDetector(input, e){
@@ -2011,7 +2022,7 @@ function eventHandlerDetector(input, e){
 }
 
 exports.eventHandlerDetector = eventHandlerDetector;
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 //Checks notification permission on the browser.
 
 function checkNotificationPermission() {
@@ -2031,7 +2042,7 @@ function checkNotificationPermission() {
 }
 
 exports.checkNotificationPermission = checkNotificationPermission;
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 var AreaCodes = require('areacodes');
 //tollfree codes
 var tollfree = ['800', '888', '877', '866', '855', '844'];

@@ -1,25 +1,11 @@
 'use strict';
 
-var dialr = new Firebase('https://dialr.firebaseio.com/');
-var dataRef = dialr.child("data");
+var sound = require('./emitSound');
+var data = require('./dataSync');
 
 var reminder;
 
-function savePhone(phone, state, sync) {
-
-    var data = {
-        phone: phone,
-        state: state,
-        fav: false,
-        UISync: sync,
-        time: moment().toString()
-    };
-
-    dataRef.push(data);
-}
-
-
-function createTR(msg, key, n) {
+function createTR(data, key, n) {
 
     var tr = document.createElement('tr');
     var created = moment();
@@ -34,11 +20,12 @@ function createTR(msg, key, n) {
 
     if (n) {
         var phone = document.createElement('span');
-        phone.innerHTML = '<a href="tel:' + msg.phone + '">' + msg.phone + '</a>';
+        phone.innerHTML = '<a href="tel:' + data.phone + '">' + data.phone + '</a>';
 
 
         var fav = document.createElement('span');
-        fav.innerHTML = '<button type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-heart" aria-hidden = "true"></span></button>';
+        fav.innerHTML = '<button type="button" class="btn btn-default btn-sm">' +
+            '<span class = "glyphicon glyphicon-heart" aria-hidden = "true" style="color:'+ (data.fav ? '#d61a7f' : '') +'"></span></button>';
 
         var remind = document.createElement('span');
         remind.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-bullhorn" aria-hidden = "true"></span></button>';
@@ -47,7 +34,7 @@ function createTR(msg, key, n) {
         remove.innerHTML = '<button id="' + key + '" style="margin-left:3px;" type="button" class="btn btn-default btn-sm"><span class = "glyphicon glyphicon-remove" aria-hidden = "true"></span></button>';
 
         td1.appendChild(phone);
-        td2.appendChild(document.createTextNode(msg.state.toUpperCase()));
+        td2.appendChild(document.createTextNode(data.state.toUpperCase()));
         td3.appendChild(document.createTextNode(moment().format("h:mm a")));
         td4.appendChild(document.createTextNode('a few seconds ago'));
         td5.appendChild(fav);
@@ -59,11 +46,6 @@ function createTR(msg, key, n) {
         tr.appendChild(td3);
         tr.appendChild(td4);
         tr.appendChild(td5);
-
-
-        baseRef.once('value', function(snap) {
-            fav.childNodes[0].style.color = snap.val().fav ? '#d61a7f' : '';
-        });
 
         baseRef.once('child_removed', function(data) {
             listBody.deleteRow(tr.rowIndex - 1);
@@ -79,24 +61,18 @@ function createTR(msg, key, n) {
 
         fav.onclick = function() {
 
-            baseRef.once('value', function(snap) {
-                fav.childNodes[0].style.color = snap.val().fav ? '#d61a7f' : '';
-            });
-
-
+            var isFav = this.childNodes[0].childNodes[0].style.color;
+            this.childNodes[0].childNodes[0].style.color = isFav ? '' : '#d61a7f';
             baseRef.update({
-                fav: fav.childNodes[0].style.color ? false : true
+                fav: isFav ? false : true
             });
-
-            this.childNodes[0].style.color = this.childNodes[0].style.color ? '' : '#d61a7f';
-            var phone = this.parentElement.parentElement.childNodes[0].childNodes[0].textContent;
-            var state = this.parentElement.parentElement.childNodes[1].textContent;
-
         };
 
         remind.onclick = function() {
 
-            remind.childNodes[0].style.color = remind.childNodes[0].style.color ? '' : 'orange';
+            var isReminded = remind.childNodes[0].style.color;
+
+            remind.childNodes[0].style.color = isReminded ? '' : 'orange';
 
             tr.style.color = phone.style.color ? '' : 'orange';
 
@@ -104,15 +80,18 @@ function createTR(msg, key, n) {
                 if (notify.permissionLevel()) {
 
                     var minutes = ~~prompt('Remind me in .. ? (minutes)', '10');
-                   
-                    if (minutes>0) {
+
+                    if (minutes > 0) {
                         reminder = setTimeout(function() {
                             notify.createNotification("Make a call", {
-                                body: msg.phone,
+                                body: data.phone,
                                 icon: "alert.ico"
                             });
-                            playSound();
+                            sound.playSound(function() {});
+                            remind.childNodes[0].style.color = '';
                         }, minutes * 60000);
+                    }else{
+                        alert('Please type a non-zero value');
                     }
                 }
 
@@ -120,53 +99,20 @@ function createTR(msg, key, n) {
                 tr.style.color = '';
                 clearTimeout(reminder);
             }
-
-            function playSound() {
-
-                var sine1 = T("sin", {
-                    freq: 240,
-                    mul: 0.51
-                });
-                var sine2 = T("sin", {
-                    freq: 400,
-                    mul: 0.54
-                });
-
-                T("perc", {
-                    r: 675
-                }, sine1, sine2).on("ended", function() {
-                    this.pause();
-                }).bang().play();
-
-                remind.childNodes[0].style.color = '';
-            }
-
         };
 
         remove.onclick = function() {
-
             clearTimeout(reminder);
-
-            var onComplete = function(error) {
-                if (error) {
-                    console.log('Synchronization failed');
-                } else {
-                    console.log('Synchronization succeeded');
-                }
-            };
-            baseRef.remove(onComplete());
-        }
+            data.remove(key);
+        };
 
         setInterval(function() {
             td4.innerHTML = moment().from(created, true) + " ago"
         }, 1000);
 
-        //forgetting sync after 5 secs
+        //void sync after 5 secs
         setTimeout(function() {
             baseRef.update({
-                UISync: 0
-            });
-            console.log({
                 UISync: 0
             });
         }, 5000);
@@ -175,12 +121,4 @@ function createTR(msg, key, n) {
     }
 }
 
-
-dataRef.orderByValue().on('child_added', function(data) {
-    createTR(data.exportVal(), data.key(), data.exportVal().UISync || data.exportVal().fav)
-});
-
-dataRef.off("value");
-
-exports.savePhone = savePhone;
 exports.createTR = createTR;

@@ -2,10 +2,10 @@
 (function() {
     'use strict';
 
-    var evnt = require('./eventHandlerDetector');
-    var tbEntry = require('./createTableEntry');
-    var notification = require('./notificationPermission');
-    var phoneNumber = require('./phoneNumber');
+    var _evnt = require('./eventHandlerDetector');
+    var _notification = require('./notificationPermission');
+    var _phoneNumber = require('./phoneNumber');
+    var _data = require('./dataSync');
 
     var sendButton = document.getElementById('send'),
         phoneNumberInput = document.getElementById('phoneNumber'),
@@ -13,35 +13,35 @@
         listBody = document.getElementById('listBody');
 
 
-    notification.checkNotificationPermission();
+    _notification.checkNotificationPermission();
 
     var eventHandler = {
 
         buttonClick: function buttonClick(e) {
 
-            var target = evnt.eventHandlerDetector(phoneNumberInput, e);
+            var target = _evnt.eventHandlerDetector(phoneNumberInput, e);
             var phone = target.value;
-            var phoneWithAreaCode = phoneNumber.numberWithAreaCode(phone);
-            var areaCodes = phoneNumber.areaCode();
+            var phoneWithAreaCode = _phoneNumber.numberWithAreaCode(phone);
+            var areaCodes = _phoneNumber.areaCode();
 
-            if (phoneNumber.isValid(phone)) {                
+            if (_phoneNumber.isTollFreeNumber(phone) > -1) {
 
-                var isTollFreeNumber = phoneNumber.isTollFreeNumber(phone);
+                _data.save(phoneWithAreaCode, 'Toll-Free', 1);
 
-                if ( isTollFreeNumber> -1) {
-                    tbEntry.savePhone(phoneWithAreaCode, 'Toll-Free', 1);
-                } else {
-                    areaCodes.get('+1' + phoneWithAreaCode, function(err, data) {
-                        if (!err) {
-                            tbEntry.savePhone(phoneWithAreaCode, data.state, 1)
-                        }
-                    });
-                }
+            } else if (_phoneNumber.isValid(phone)) {
 
-                target.value = "";
-                return false;
+                areaCodes.get('+1' + phoneWithAreaCode, function(err, data) {
+                    if (!err) {
+                        _data.save(phoneWithAreaCode, data.state, 1)
+                    }
+                });
+
+            } else {
+                alert('Invalid phone number');
             }
-            alert('Invalid phone number');
+
+            target.value = "";
+            return false;
         },
 
         enterKey: function enterKey(e) {
