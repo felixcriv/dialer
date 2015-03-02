@@ -1922,20 +1922,17 @@ function createTR(msg, key, n) {
             if (remind.childNodes[0].style.color) {
                 if (notify.permissionLevel()) {
 
-                    var minutes;
-
-                    do {
-                        minutes = ~~prompt('Remind me in .. ? (minutes)', '10');
-                        console.log(minutes);
-                    } while (minutes <= 0);
-
-                    reminder = setTimeout(function() {
-                        notify.createNotification("Make a call", {
-                            body: msg.phone,
-                            icon: "alert.ico"
-                        });
-                        playSound();
-                    }, minutes * 60000);
+                    var minutes = ~~prompt('Remind me in .. ? (minutes)', '10');
+                   
+                    if (minutes>0) {
+                        reminder = setTimeout(function() {
+                            notify.createNotification("Make a call", {
+                                body: msg.phone,
+                                icon: "alert.ico"
+                            });
+                            playSound();
+                        }, minutes * 60000);
+                    }
                 }
 
             } else {
