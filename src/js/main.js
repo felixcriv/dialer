@@ -26,13 +26,13 @@
 
             if (_phoneNumber.isTollFreeNumber(phone) > -1) {
 
-                _data.save(phoneWithAreaCode, 'Toll-Free', 1);
+                _data.save(phoneWithAreaCode, 'Toll-Free', 1, false);
 
             } else if (_phoneNumber.isValid(phone)) {
 
                 areaCodes.get('+1' + phoneWithAreaCode, function(err, data) {
                     if (!err) {
-                        _data.save(phoneWithAreaCode, data.state, 1)
+                        _data.save(phoneWithAreaCode, data.state, 1, false)
                     }
                 });
 
