@@ -3,6 +3,9 @@
 var sound = require('./emitSound');
 var _data = require('./dataSync');
 
+
+alertify.defaults.glossary.title = "Reminder";
+
 var reminder;
 
 function createTR(data, key, UISync) {
@@ -63,24 +66,30 @@ function createTR(data, key, UISync) {
 
             if (!tr.style.color) {
                 if (notify.permissionLevel()) {
+                    alertify.prompt("Remind me in .. ? (minutes)", "10",
+                        function(evt, value) {
+                            
+                            var minutes = ~~value;
 
-                    var minutes = ~~prompt('Remind me in .. ? (minutes)', '10');
-
-                    if (minutes > 0) {
-                        _data.saveNotification(key, true);
-                        reminder = setTimeout(function() {
-                            notify.createNotification("Make a call", {
-                                body: data.phone,
-                                icon: "alert.ico"
-                            });
-                            sound.playSound(function() {});
-                            //tr.style.color = '';
-                        }, minutes * 60000);
-                    } else {
-                        alert('Please type a non-zero value');
-                    }
+                            if (minutes > 0) {
+                                _data.saveNotification(key, true);
+                                alertify.success('I will remind you in ' + value + ' minutes');
+                                reminder = setTimeout(function() {
+                                    notify.createNotification("Make a call", {
+                                        body: data.phone,
+                                        icon: "alert.ico"
+                                    });
+                                    sound.playSound(function() {});
+                                    //tr.style.color = '';
+                                }, minutes * 60000);
+                            } else {
+                                alertify.error('Please type a non-zero value');
+                            }
+                        },
+                        function() {
+                            //alertify.error('Cancel');
+                        });
                 }
-
             } else {
                 //tr.style.color = '';
                 _data.saveNotification(key, false);

@@ -12,7 +12,7 @@
         list = document.getElementById('list'),
         listBody = document.getElementById('listBody');
 
-
+        alertify.warning('Remember to level up your speakers to listen alerts');
     _notification.checkNotificationPermission();
 
     var eventHandler = {
